@@ -44,3 +44,4 @@ app-example
 
 # private
 .env
+example/
