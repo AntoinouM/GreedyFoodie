@@ -1,10 +1,25 @@
-import { Text, View } from 'react-native';
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { GlobalClasses } from '../constants/classes';
 
-export default function App() {
+function App() {
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <Text>Food Scanner App 🚀</Text>
-      <Text>Add different tab for different functions</Text>
-    </View>
+    <ThemedView style={GlobalClasses.container}>
+      <SafeAreaView style={GlobalClasses.safeArea}>
+        <ThemedText type="title" style={styles.title}>
+          My Fridge
+        </ThemedText>
+      </SafeAreaView>
+    </ThemedView>
   );
 }
+
+const styles = StyleSheet.create({
+  title: {
+    textAlign: 'center',
+  },
+});
+
+export default App;
