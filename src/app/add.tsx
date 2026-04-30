@@ -3,7 +3,7 @@ import { GlobalClasses } from '@/constants/classes';
 import { FoodProduct, searchByBarcode } from '@/services/barcode';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   StatusBar,
@@ -22,6 +22,7 @@ export default function App() {
   const [foodProduct, setFoodProduct] = useState<FoodProduct | null>(null);
   const [loadingFood, setLoadingFood] = useState(false);
   const [foodError, setFoodError] = useState<string | null>(null);
+  const processingRef = useRef(false);
 
   useEffect(() => {
     if (permission === null) {
@@ -36,25 +37,26 @@ export default function App() {
     data: string;
     type: string;
   }) => {
-    if (!scanned) {
-      setScanned(true);
-      setScanning(false);
-      setScannedData(data);
-      setScannedType(type);
-      setFoodProduct(null);
-      setFoodError(null);
-      setLoadingFood(true);
-      searchByBarcode(data)
-        .then((product) => {
-          setFoodProduct(product);
-          if (!product) setFoodError('No product found for this barcode.');
-        })
-        .catch(() => setFoodError('Failed to fetch product info. Try again.'))
-        .finally(() => setLoadingFood(false));
-    }
+    if (processingRef.current) return;
+    processingRef.current = true;
+    setScanned(true);
+    setScanning(false);
+    setScannedData(data);
+    setScannedType(type);
+    setFoodProduct(null);
+    setFoodError(null);
+    setLoadingFood(true);
+    searchByBarcode(data)
+      .then((product) => {
+        setFoodProduct(product);
+        if (!product) setFoodError('No product found for this barcode.');
+      })
+      .catch(() => setFoodError('Failed to fetch product info. Try again.'))
+      .finally(() => setLoadingFood(false));
   };
 
   const handleScanAgain = () => {
+    processingRef.current = false;
     setScanned(false);
     setScanning(true);
     setScannedData('');
@@ -143,11 +145,6 @@ const ScannedDataCard = ({
   error: string | null;
   onScanAgain: () => void;
 }) => {
-  const n = product?.nutriments;
-  const kcal = n
-    ? (n as Record<string, number | undefined>)['energy-kcal_100g']
-    : undefined;
-
   return (
     <View style={styles.card}>
       {loading ? (
@@ -170,31 +167,6 @@ const ScannedDataCard = ({
               {product.quantity ? ` · ${product.quantity}` : ''}
             </Text>
           ) : null}
-          {n ? (
-            <View style={styles.nutritionGrid}>
-              <NutrientCell
-                label="Calories"
-                value={Math.round(kcal ?? 0).toString()}
-                unit="kcal"
-              />
-              <NutrientCell
-                label="Protein"
-                value={(n.proteins_100g ?? 0).toFixed(1)}
-                unit="g"
-              />
-              <NutrientCell
-                label="Carbs"
-                value={(n.carbohydrates_100g ?? 0).toFixed(1)}
-                unit="g"
-              />
-              <NutrientCell
-                label="Fat"
-                value={(n.fat_100g ?? 0).toFixed(1)}
-                unit="g"
-              />
-            </View>
-          ) : null}
-          {n ? <Text style={styles.cardType}>Per 100g</Text> : null}
         </>
       ) : null}
       <TouchableOpacity style={styles.button} onPress={onScanAgain}>
@@ -203,24 +175,6 @@ const ScannedDataCard = ({
     </View>
   );
 };
-
-const NutrientCell = ({
-  label,
-  value,
-  unit,
-}: {
-  label: string;
-  value: string;
-  unit: string;
-}) => (
-  <View style={styles.nutrientCell}>
-    <Text style={styles.nutrientValue}>
-      {value}
-      {unit}
-    </Text>
-    <Text style={styles.nutrientLabel}>{label}</Text>
-  </View>
-);
 
 const styles = StyleSheet.create({
   title: {
