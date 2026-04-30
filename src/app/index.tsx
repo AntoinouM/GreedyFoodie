@@ -8,7 +8,7 @@ function App() {
   return (
     <ThemedView style={GlobalClasses.container}>
       <SafeAreaView style={GlobalClasses.safeArea}>
-        <ThemedText type="title" style={styles.title}>
+        <ThemedText type="smallBold" style={styles.title}>
           My Fridge
         </ThemedText>
       </SafeAreaView>

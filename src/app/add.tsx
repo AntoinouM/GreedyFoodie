@@ -1,10 +1,6 @@
 import { ThemedText } from '@/components/themed-text';
 import { GlobalClasses } from '@/constants/classes';
-import {
-  FoodProduct,
-  getFirstServing,
-  searchByBarcode,
-} from '@/services/fatsecret';
+import { FoodProduct, searchByBarcode } from '@/services/barcode';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import React, { useEffect, useState } from 'react';
@@ -135,7 +131,6 @@ const ScannerOverlay = ({ scanning }: { scanning: boolean }) => {
 
 const ScannedDataCard = ({
   data,
-  type,
   product,
   loading,
   error,
@@ -148,7 +143,10 @@ const ScannedDataCard = ({
   error: string | null;
   onScanAgain: () => void;
 }) => {
-  const serving = product ? getFirstServing(product) : null;
+  const n = product?.nutriments;
+  const kcal = n
+    ? (n as Record<string, number | undefined>)['energy-kcal_100g']
+    : undefined;
 
   return (
     <View style={styles.card}>
@@ -165,31 +163,38 @@ const ScannedDataCard = ({
         </>
       ) : product ? (
         <>
-          <Text style={styles.cardTitle}>{product.food_name}</Text>
-          {product.brand_name ? (
-            <Text style={styles.cardType}>{product.brand_name}</Text>
+          <Text style={styles.cardTitle}>{product.product_name}</Text>
+          {product.brands ? (
+            <Text style={styles.cardType}>
+              {product.brands}
+              {product.quantity ? ` · ${product.quantity}` : ''}
+            </Text>
           ) : null}
-          {serving ? (
+          {n ? (
             <View style={styles.nutritionGrid}>
               <NutrientCell
                 label="Calories"
-                value={serving.calories}
+                value={Math.round(kcal ?? 0).toString()}
                 unit="kcal"
               />
-              <NutrientCell label="Protein" value={serving.protein} unit="g" />
               <NutrientCell
-                label="Carbs"
-                value={serving.carbohydrate}
+                label="Protein"
+                value={(n.proteins_100g ?? 0).toFixed(1)}
                 unit="g"
               />
-              <NutrientCell label="Fat" value={serving.fat} unit="g" />
+              <NutrientCell
+                label="Carbs"
+                value={(n.carbohydrates_100g ?? 0).toFixed(1)}
+                unit="g"
+              />
+              <NutrientCell
+                label="Fat"
+                value={(n.fat_100g ?? 0).toFixed(1)}
+                unit="g"
+              />
             </View>
           ) : null}
-          {serving ? (
-            <Text style={styles.cardType}>
-              Per {serving.serving_description}
-            </Text>
-          ) : null}
+          {n ? <Text style={styles.cardType}>Per 100g</Text> : null}
         </>
       ) : null}
       <TouchableOpacity style={styles.button} onPress={onScanAgain}>
